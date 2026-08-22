@@ -1,0 +1,12 @@
+[project]
+name = "baseball-ai"
+version = "0.1.0"
+description = "Personal Yahoo Fantasy Baseball integration and roster-management project"
+requires-python = ">=3.11"
+dependencies = [
+  "requests>=2.32,<3",
+  "python-dotenv>=1.0,<2",
+]
+
+[tool.ruff]
+line-length = 100
