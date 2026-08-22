@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+*.token
+*.tokens
+secrets.json
+credentials.json
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Test / build output
+.pytest_cache/
+.coverage
+dist/
+build/
+*.egg-info/
