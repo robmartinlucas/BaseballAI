@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Yahoo Fantasy Basketball{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <a class="brand" href="{{ url_for('index') }}">Yahoo Fantasy Basketball</a>
+      <span class="subtitle">read-only status viewer</span>
+    </div>
+    {% if connected %}
+      <form method="post" action="{{ url_for('logout') }}">
+        <button class="secondary" type="submit">Disconnect Yahoo</button>
+      </form>
+    {% endif %}
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
