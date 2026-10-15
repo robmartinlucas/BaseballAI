@@ -1,0 +1,144 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #202124;
+  background: #f5f6f8;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: inherit; }
+
+.topbar {
+  min-height: 64px;
+  padding: 14px max(20px, calc((100vw - 1100px) / 2));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: white;
+  border-bottom: 1px solid #e4e7eb;
+}
+.brand { font-weight: 750; text-decoration: none; }
+.subtitle { margin-left: 10px; color: #697386; font-size: 0.9rem; }
+
+.container {
+  max-width: 1100px;
+  margin: 32px auto;
+  padding: 0 20px 40px;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e3e6eb;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+.hero { padding: 36px; }
+h1 { margin: 6px 0 8px; }
+h2 { margin-top: 24px; font-size: 1.05rem; }
+p { line-height: 1.55; }
+
+.row { display: flex; gap: 16px; align-items: center; }
+.between { justify-content: space-between; }
+.muted, .small { color: #697386; }
+.small { font-size: 0.78rem; margin-top: 3px; }
+
+.button, button {
+  display: inline-block;
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 14px;
+  background: #5f36b8;
+  color: white;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.button.secondary, button.secondary {
+  background: #eef0f4;
+  color: #252a34;
+}
+
+.alert {
+  background: #fff4e5;
+  border: 1px solid #ffd99b;
+  border-radius: 9px;
+  padding: 12px 14px;
+  overflow-wrap: anywhere;
+}
+
+.league-list { display: grid; gap: 10px; }
+.league {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+  text-decoration: none;
+  padding: 14px;
+  border: 1px solid #e4e7eb;
+  border-radius: 10px;
+}
+.league:hover { background: #fafafa; }
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+.filters a {
+  padding: 7px 10px;
+  border-radius: 999px;
+  text-decoration: none;
+  background: #f0f2f5;
+}
+.filters a.active {
+  background: #5f36b8;
+  color: white;
+}
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td {
+  text-align: left;
+  padding: 11px 10px;
+  border-bottom: 1px solid #eceef1;
+  vertical-align: top;
+}
+th { font-size: 0.8rem; color: #697386; text-transform: uppercase; letter-spacing: .03em; }
+
+.badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #eceff3;
+  font-size: .82rem;
+  text-transform: capitalize;
+}
+.badge.ok, .badge.free_agent { background: #e6f6eb; }
+.badge.waivers { background: #fff2cc; }
+.badge.rostered { background: #e8edff; }
+.badge.unknown { background: #f0f0f0; }
+
+.pager {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 18px;
+}
+.back { text-decoration: none; color: #5f36b8; }
+
+code {
+  background: #f1f2f4;
+  padding: 2px 5px;
+  border-radius: 5px;
+}
+
+@media (max-width: 700px) {
+  .subtitle { display: none; }
+  .row.between { align-items: flex-start; flex-direction: column; }
+  .league { grid-template-columns: 1fr; }
+  .card { padding: 18px; }
+}
