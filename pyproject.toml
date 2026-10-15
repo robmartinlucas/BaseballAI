@@ -1,12 +1,32 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "baseball-ai"
-version = "0.1.0"
-description = "Personal Yahoo Fantasy Baseball integration and roster-management project"
+version = "0.2.0"
+description = "Personal Yahoo Fantasy Sports status viewer"
 requires-python = ">=3.11"
 dependencies = [
-  "requests>=2.32,<3",
+  "Flask>=3.0,<4",
+  "cryptography>=42,<47",
   "python-dotenv>=1.0,<2",
+  "requests>=2.32,<3",
 ]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+]
+
+[project.scripts]
+baseball-ai = "baseball_ai.web:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+baseball_ai = ["templates/*.html", "static/*.css"]
 
 [tool.ruff]
 line-length = 100
