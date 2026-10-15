@@ -12,6 +12,7 @@ venv/
 *.tokens
 secrets.json
 credentials.json
+instance/
 
 # IDE / OS
 .vscode/
