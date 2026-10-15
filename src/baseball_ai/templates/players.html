@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Player status · Yahoo Fantasy Basketball{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <div class="row between">
+      <div>
+        <a class="back" href="{{ url_for('index') }}">← Leagues</a>
+        <h1>Player status</h1>
+        <p class="muted">League {{ league_key }} · Yahoo ownership data</p>
+      </div>
+      <a class="button secondary" href="{{ request.url }}">Refresh</a>
+    </div>
+
+    <nav class="filters">
+      <a class="{{ 'active' if availability == 'all' else '' }}"
+         href="{{ url_for('league_players', league_key=league_key, start=start, availability='all') }}">All</a>
+      <a class="{{ 'active' if availability == 'free_agent' else '' }}"
+         href="{{ url_for('league_players', league_key=league_key, start=start, availability='free_agent') }}">Free agents</a>
+      <a class="{{ 'active' if availability == 'waivers' else '' }}"
+         href="{{ url_for('league_players', league_key=league_key, start=start, availability='waivers') }}">Waivers</a>
+      <a class="{{ 'active' if availability == 'rostered' else '' }}"
+         href="{{ url_for('league_players', league_key=league_key, start=start, availability='rostered') }}">Rostered</a>
+    </nav>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>NBA</th>
+            <th>Pos</th>
+            <th>Injury</th>
+            <th>Yahoo status</th>
+            <th>Fantasy team / waiver date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player in players %}
+            {% set bucket = availability_bucket(player.ownership_type) %}
+            <tr>
+              <td>
+                <strong>{{ player.name or player.player_key }}</strong>
+                <div class="small">{{ player.player_key }}</div>
+              </td>
+              <td>{{ player.nba_team or '—' }}</td>
+              <td>{{ player.positions or '—' }}</td>
+              <td>{{ player.injury_status or '—' }}</td>
+              <td><span class="badge {{ bucket }}">{{ bucket.replace('_', ' ') }}</span></td>
+              <td>
+                {% if player.owner_team_name %}
+                  {{ player.owner_team_name }}
+                {% elif player.waiver_date %}
+                  Waivers until {{ player.waiver_date }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="6">No players on this page match the selected filter.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager">
+      {% if start > 0 %}
+        <a class="button secondary"
+           href="{{ url_for('league_players', league_key=league_key, start=[0, start-count]|max, availability=availability) }}">Previous</a>
+      {% endif %}
+      <span class="muted">Players {{ start + 1 }}–{{ start + count }}</span>
+      <a class="button secondary"
+         href="{{ url_for('league_players', league_key=league_key, start=start+count, availability=availability) }}">Next</a>
+    </div>
+  </section>
+{% endblock %}
