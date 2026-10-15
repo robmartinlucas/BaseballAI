@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Yahoo Fantasy Basketball{% endblock %}
+
+{% block content %}
+  {% if not connected %}
+    <section class="card hero">
+      <h1>Connect Yahoo Fantasy</h1>
+      <p>
+        Sign in once through Yahoo OAuth. The app will store the refresh token locally
+        and refresh access tokens automatically, so you do not need to copy and paste codes.
+      </p>
+      <a class="button" href="{{ url_for('login') }}">Connect Yahoo</a>
+    </section>
+  {% else %}
+    <section class="card">
+      <div class="row between">
+        <div>
+          <h1>Fantasy Basketball</h1>
+          {% if game %}
+            <p class="muted">{{ game.name }} · {{ game.season }} · game {{ game.game_key }}</p>
+          {% endif %}
+        </div>
+        <span class="badge ok">Yahoo connected</span>
+      </div>
+
+      {% if error %}
+        <div class="alert">{{ error }}</div>
+      {% endif %}
+
+      {% if leagues %}
+        <h2>Your current leagues</h2>
+        <div class="league-list">
+          {% for league in leagues %}
+            <a class="league" href="{{ url_for('league_players', league_key=league.league_key) }}">
+              <strong>{{ league.name }}</strong>
+              <span>{{ league.league_key }}</span>
+              {% if league.draft_status %}
+                <span>Draft: {{ league.draft_status }}</span>
+              {% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      {% elif not error %}
+        <p>No current NBA fantasy leagues were returned for this Yahoo account.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section class="card">
+    <h2>How player availability is read</h2>
+    <p>
+      This app does not use Yahoo's <code>status=A</code> or <code>status=FA</code>
+      filters. Instead it requests each player's Yahoo <code>ownership</code> resource
+      and labels the player as rostered, free agent, waivers, or unknown.
+    </p>
+  </section>
+{% endblock %}
