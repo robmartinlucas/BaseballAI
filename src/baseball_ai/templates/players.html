@@ -66,12 +66,14 @@
       </table>
     </div>
 
+    {% set previous_start = start - count %}
+    {% if previous_start < 0 %}{% set previous_start = 0 %}{% endif %}
     <div class="pager">
       {% if start > 0 %}
         <a class="button secondary"
-           href="{{ url_for('league_players', league_key=league_key, start=[0, start-count]|max, availability=availability) }}">Previous</a>
+           href="{{ url_for('league_players', league_key=league_key, start=previous_start, availability=availability) }}">Previous</a>
       {% endif %}
-      <span class="muted">Players {{ start + 1 }}–{{ start + count }}</span>
+      <span class="muted">Yahoo page starting at player {{ start + 1 }}</span>
       <a class="button secondary"
          href="{{ url_for('league_players', league_key=league_key, start=start+count, availability=availability) }}">Next</a>
     </div>
