@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Error · Yahoo Fantasy Basketball{% endblock %}
+{% block content %}
+  <section class="card">
+    <h1>Something went wrong</h1>
+    <div class="alert">{{ message }}</div>
+    <p><a class="button" href="{{ url_for('index') }}">Back to home</a></p>
+  </section>
+{% endblock %}
