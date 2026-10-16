@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "baseball-ai"
 version = "0.2.0"
 description = "Personal Yahoo Fantasy Sports status viewer"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
   "Flask>=3.0,<4",
   "cryptography>=42,<47",
