@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Matchup command center · Yahoo Fantasy Basketball{% endblock %}
+{% block content %}
+  <div class="dashboard">
+    <div class="dashboard-header">
+      <div>
+        <a class="back" href="{{ url_for('index') }}">← All leagues</a>
+        <div class="eyebrow">Fantasy basketball · Matchup command center</div>
+        <h1>Win this week.</h1>
+        <p class="lead">See the categories at stake, find possible pickups, protect your roster,
+          and explore trade targets across your league.</p>
+      </div>
+      <div class="header-actions">
+        <span class="badge ok">Yahoo read access</span>
+        <a class="button secondary" href="{{ url_for('league_dashboard', league_key=data.league_key, scan=scan, trades=('1' if trades else '0'), refresh=1) }}">↻ Refresh Yahoo data</a>
+      </div>
+    </div>
+
+    {% if data.notices %}
+      <details class="alerts">
+        <summary>Some sources were unavailable ({{ data.notices|length }})</summary>
+        <ul>
+          {% for notice in data.notices %}<li>{{ notice }}</li>{% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+
+    <section class="dashboard-metrics">
+      <div class="metric">
+        <span class="metric-label">Your team</span>
+        <strong>{{ data.my_team.name if data.my_team else 'Not located' }}</strong>
+        <small>{{ 'Current Yahoo roster' if data.my_team else 'Check that your Yahoo account owns a team in this league' }}</small>
+      </div>
+      <div class="metric">
+        <span class="metric-label">This week's opponent</span>
+        <strong>{{ data.opponent.name if data.opponent else 'Not yet available' }}</strong>
+        <small>
+          {% if data.matchup %}
+            Week {{ data.matchup.week or '?' }}
+            {% if data.matchup.week_start and data.matchup.week_end %}
+              · {{ data.matchup.week_start }} to {{ data.matchup.week_end }}
+            {% endif %}
+          {% else %}
+            Waiting for Yahoo matchup data
+          {% endif %}
+        </small>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Categories to chase</span>
+        {% set chase = data.categories|selectattr('priority', 'ge', 2)|list %}
+        <strong>{{ chase|length if data.categories else '—' }}</strong>
+        <small>Close losses or ties in Yahoo's current totals</small>
+      </div>
+      <div class="metric">
+        <span class="metric-label">League add limit</span>
+        <strong>{{ weekly_limit if weekly_limit is not none else '—' }}</strong>
+        <small>
+          {% if remaining_moves is not none %}
+            {{ remaining_moves }} estimated remaining · {{ moves_used }} entered as used
+          {% else %}
+            {% if weekly_limit is not none %}Enter weekly moves used below{% else %}Not available from settings{% endif %}
+          {% endif %}
+        </small>
+      </div>
+    </section>
+
+    <div class="section-grid two-thirds">
+      <section class="card command-panel">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">01 / Current matchup</div>
+            <h2>Category battle</h2>
+          </div>
+          <span class="muted small">Yahoo live totals · not forecasts</span>
+        </div>
+        {% if data.categories %}
+          <div class="category-table">
+            <div class="category-head">
+              <span>Category</span><span>Yours</span><span>Opponent</span><span>Edge</span>
+            </div>
+            {% for cat in data.categories %}
+              <div class="category-line">
+                <span class="category-name">{{ cat.name }}</span>
+                <span class="stat-number">{{ cat.mine }}</span>
+                <span class="stat-number">{{ cat.theirs }}</span>
+                <span><span class="edge edge-{{ cat.state }}">
+                  {% if cat.state == 'winning' %}Ahead
+                  {% elif cat.state == 'losing' and cat.close %}Close loss
+                  {% elif cat.state == 'losing' %}Behind
+                  {% elif cat.state == 'tied' %}Tied
+                  {% else %}Not scored{% endif %}
+                </span></span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-block">
+            <strong>No current category scoreboard yet.</strong>
+            <p>Yahoo may not have started the weekly matchup, or the league scoreboard is temporarily unavailable. You can still examine the roster and availability below.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <aside class="card focus-panel">
+        <div class="eyebrow">02 / Weekly game plan</div>
+        <h2>Focus areas</h2>
+        {% set chase = data.categories|selectattr('priority', 'ge', 2)|list %}
+        {% if chase %}
+          <p class="muted">Your most actionable categories based on the current score:</p>
+          <div class="focus-chips">
+            {% for c in chase[:5] %}
+              <span class="focus-chip">{{ c.name }} <span>{{ 'tied' if c.state == 'tied' else 'close' }}</span></span>
+            {% endfor %}
+          </div>
+          <p class="fine-print">These are categories in a tie or within a conservative closeness threshold, not predicted wins.</p>
+        {% else %}
+          <p class="muted">No clearly close categories can be identified yet. Check back as scores update.</p>
+        {% endif %}
+        <div class="panel-divider"></div>
+        <h3>Acquisition budget</h3>
+        <form class="moves-form" method="get" action="{{ url_for('league_dashboard', league_key=data.league_key) }}">
+          <input type="hidden" name="scan" value="{{ scan }}">
+          <input type="hidden" name="trades" value="{{ '1' if trades else '0' }}">
+          <label for="moves_used">Moves you've made this week</label>
+          <div class="input-line">
+            <input id="moves_used" type="number" min="0" max="100" name="moves_used" value="{{ moves_used if moves_used is not none else '' }}" placeholder="Enter count">
+            <button type="submit" class="button">Update</button>
+          </div>
+        </form>
+        <p class="fine-print">Manual tracker only. Verify remaining additions and waiver processing in Yahoo before making a move.</p>
+        <div class="panel-divider"></div>
+        <h3>Upcoming games</h3>
+        <p class="muted">{{ data.schedule.label }}</p>
+        <p class="fine-print">
+          {{ data.window.start.strftime('%b %d') }} – {{ data.window.end.strftime('%b %d') }}
+          {% if not data.window.verified %} · Next-days window, not a Yahoo-verified scoring week{% endif %}
+        </p>
+      </aside>
+    </div>
+
+    <div class="section-grid half">
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">03 / Win-now opportunities</div>
+            <h2>Potential adds</h2>
+          </div>
+          <span class="badge">{{ data.free_agents_found }} FA · {{ data.waivers_found }} W</span>
+        </div>
+        <p class="muted">Candidates from {{ data.scanned }} of the first {{ data.requested_scan }} Yahoo player records scanned. Ranked heuristically using upcoming games and available season category data.</p>
+        {% if data.adds %}
+          <div class="watchlist">
+            {% for p in data.adds[:10] %}
+              <div class="watch-item">
+                <div class="watch-top">
+                  <div>
+                    <strong>{{ p.name }}</strong>
+                    <span class="subtext">{{ p.nba_team or 'NBA team N/A' }} · {{ p.positions or 'Position N/A' }}</span>
+                  </div>
+                  <span class="badge {{ 'waivers' if p.ownership_type|lower in ['waivers', 'waiver'] else 'free_agent' }}">
+                    {{ 'Waivers' if p.ownership_type|lower in ['waivers', 'waiver'] else 'Free agent' }}
+                  </span>
+                </div>
+                <p class="reason">{{ p.reason }}</p>
+                {% if p.waiver_date %}<p class="fine-print">Waiver date: {{ p.waiver_date }}</p>{% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-block">
+            <strong>No confirmed available candidates in the scanned pages.</strong>
+            <p>The scan deliberately avoids Yahoo's hanging availability filter. Scan more players to widen the sample.</p>
+          </div>
+        {% endif %}
+        <div class="button-row">
+          {% if scan == 100 %}
+            <a class="button secondary" href="{{ url_for('league_dashboard', league_key=data.league_key, scan=200, trades=('1' if trades else '0')) }}">Scan 200 players</a>
+          {% endif %}
+          <a class="text-link" href="{{ url_for('league_players', league_key=data.league_key) }}">Browse player status →</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">04 / Roster management</div>
+            <h2>Your roster & drop watchlist</h2>
+          </div>
+          <span class="badge">{{ data.roster|length }} players</span>
+        </div>
+        <p class="muted">Injuries and zero-game windows are review flags, <strong>not</strong> automatic drop recommendations. Consider player quality, IL eligibility, and bench depth.</p>
+
+        {% if data.drop_watchlist %}
+          <div class="risk-list">
+            {% for p in data.drop_watchlist %}
+              <div class="risk-item">
+                <div>
+                  <strong>{{ p.name }}</strong>
+                  <div class="subtext">{{ p.nba_team }} · {{ p.positions }} · {{ p.injury_status or 'Active' }}</div>
+                  <div class="reason">{{ p.reason }}</div>
+                </div>
+                <span class="badge {{ 'waivers' if p.risk == 'out' else '' }}">Review</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-block">
+            <strong>No obvious short-term roster flags in the data loaded.</strong>
+            <p>Continue monitoring late injury reports and upcoming NBA game days.</p>
+          </div>
+        {% endif %}
+
+        <h3 class="roster-title">Full roster</h3>
+        {% if data.roster %}
+          <div class="roster-list">
+            {% for p in data.roster %}
+              <div class="roster-row">
+                <span>
+                  <strong>{{ p.name }}</strong>
+                  <small>{{ p.nba_team }} · {{ p.positions }}</small>
+                </span>
+                <span class="roster-metadata">
+                  {% if p.injury_status %}<span class="badge {{ 'waivers' if p.risk != 'none' else '' }}">{{ p.injury_status }}</span>{% endif %}
+                  {% if p.games_remaining is not none %}<span class="small">{{ p.games_remaining }} games</span>{% endif %}
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">Your roster was unavailable or Yahoo hasn't identified your team.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <section class="card trade-panel">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">05 / Trade market</div>
+          <h2>Targets on other rosters</h2>
+          <p class="muted">Explore players actually rostered by other Yahoo managers. Category fit is based on season stats where available; this is not a trade valuation or a projection.</p>
+        </div>
+        {% if not trades %}
+          <a class="button" href="{{ url_for('league_dashboard', league_key=data.league_key, scan=scan, trades=1) }}">Scan trade targets</a>
+        {% endif %}
+      </div>
+
+      {% if not data.trades_loaded %}
+        <div class="trade-placeholder">
+          <div class="trade-symbol">⇄</div>
+          <div>
+            <strong>Find possible trading partners.</strong>
+            <p>Click <strong>Scan trade targets</strong> to load other teams' current rosters and find category fits. This can take a little longer because Yahoo is contacted for each team.</p>
+          </div>
+        </div>
+      {% elif data.trade_targets %}
+        <div class="trade-grid">
+          {% for p in data.trade_targets %}
+            <div class="trade-candidate">
+              <div class="watch-top">
+                <strong>{{ p.name }}</strong>
+                {% if p.risk != 'none' %}<span class="badge waivers">{{ p.injury_status }}</span>{% endif %}
+              </div>
+              <p class="subtext">{{ p.nba_team }} · {{ p.positions }}</p>
+              <p class="trade-owner">On {{ p.owner_team_name }}</p>
+              <p class="reason">{{ p.reason }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-block">
+          <strong>No trade candidates could be ranked.</strong>
+          <p>Check the source notices above. Yahoo may not have returned other teams' rosters yet.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <p class="dashboard-footer">Updated {{ data.generated_at }} · Yahoo Fantasy read-only · Data is a decision aid, not a guarantee of outcomes.
+       Upcoming NBA games use a separate ESPN schedule feed when available; final eligibility and acquisitions should be verified in Yahoo.</p>
+  </div>
+{% endblock %}
