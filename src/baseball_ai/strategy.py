@@ -223,12 +223,15 @@ def score_free_agents(players: List[Dict[str, Any]],
         p["signal_score"] = signal["score"]
         # Upcoming games favor usable streamers, but not a fantasy projection.
         games = p.get("games_remaining")
-        game_score = float(games or 0) * 1.3 if schedule["available"] else 0
+        game_score = float(games or 0) * 1.3 if schedule.get("rankable") else 0
         injury_penalty = 4 if p["risk"] == "out" else 1 if p["risk"] == "questionable" else 0
         p["rank_score"] = round(game_score + signal["score"] - injury_penalty, 2)
         reason = []
         if games is not None:
-            reason.append("{} upcoming NBA game{}".format(games, "" if games == 1 else "s"))
+            reason.append("{} upcoming NBA game{}{}".format(
+                games, "" if games == 1 else "s",
+                "" if schedule.get("rankable") else " (fantasy-scoring week not verified)"
+            ))
         if signal["categories"]:
             reason.append("Season-stat strengths in {}".format(", ".join(signal["categories"])))
         if not reason:
@@ -249,7 +252,7 @@ def drop_watchlist(roster: List[Dict[str, Any]],
             reasons.append("Injury/availability concern; verify timeline and IL eligibility")
         elif p["risk"] == "questionable":
             reasons.append("Day-to-day; monitor pregame status")
-        if games == 0 and schedule["available"]:
+        if games == 0 and schedule.get("rankable"):
             reasons.append("No upcoming NBA games found in this window")
         if reasons:
             item = dict(p)
@@ -328,6 +331,9 @@ class DashboardService:
         window = schedule_window(matchup)
         schedule = optional("NBA schedule", lambda: remaining_games(window),
                             {"available": False, "games": {}, "label": "Schedule unavailable"})
+        # Do not infer valid fantasy starts from preseason/other non-scoring
+        # dates when Yahoo has not confirmed the matchup week boundaries.
+        schedule["rankable"] = bool(schedule["available"] and window["verified"])
 
         roster = optional("My roster", lambda: self.yahoo.roster(mine["team_key"]), []) if mine else []
         decorate_schedule(roster, schedule)
