@@ -21,7 +21,7 @@ from .yahoo_client import (
 
 
 def create_app() -> Flask:
-    load_dotenv()
+    load_dotenv(".env", override=True)
 
     app = Flask(__name__)
     app.secret_key = os.getenv("FLASK_SECRET_KEY") or secrets.token_hex(32)
