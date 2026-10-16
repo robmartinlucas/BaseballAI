@@ -246,3 +246,5 @@ body { color: var(--ink); background: #f5f7fb; }
 .recent-stats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
 .recent-stats span { color: #52617a; font-size: .7rem; background: #f1f4f9; border-radius: 5px; padding: 3px 5px; }
 .recent-stats b { color: #3b4c68; }
+
+.moves-form .moves-label { margin-top: 12px; }
