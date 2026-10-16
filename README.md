@@ -25,6 +25,8 @@ Yahoo currently provisioned this application for read access. The code does **no
 
 ## Local setup
 
+Requires **Python 3.9+**.
+
 ### 1. Clone and install
 
 ```bash
