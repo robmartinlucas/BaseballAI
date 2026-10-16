@@ -58,7 +58,7 @@
           {% if remaining_moves is not none %}
             {{ remaining_moves }} estimated remaining · {{ moves_used }} entered as used
           {% else %}
-            {% if weekly_limit is not none %}Enter weekly moves used below{% else %}Not available from settings{% endif %}
+            {% if weekly_limit is not none %}Enter weekly moves used below{% else %}Enter your weekly cap below{% endif %}
           {% endif %}
         </small>
       </div>
@@ -118,10 +118,15 @@
         {% endif %}
         <div class="panel-divider"></div>
         <h3>Acquisition budget</h3>
+        <p class="fine-print">Set the weekly cap from Yahoo league settings and the number of moves used; values you enter are saved in your local browser session.</p>
         <form class="moves-form" method="get" action="{{ url_for('league_dashboard', league_key=data.league_key) }}">
           <input type="hidden" name="scan" value="{{ scan }}">
           <input type="hidden" name="trades" value="{{ '1' if trades else '0' }}">
-          <label for="moves_used">Moves you've made this week</label>
+          <label for="weekly_limit">Maximum acquisitions per week</label>
+          <div class="input-line">
+            <input id="weekly_limit" type="number" min="0" max="100" name="weekly_limit" value="{{ weekly_limit if weekly_limit is not none else '' }}" placeholder="e.g. 5">
+          </div>
+          <label for="moves_used" class="moves-label">Moves you've made this week</label>
           <div class="input-line">
             <input id="moves_used" type="number" min="0" max="100" name="moves_used" value="{{ moves_used if moves_used is not none else '' }}" placeholder="Enter count">
             <button type="submit" class="button">Update</button>
