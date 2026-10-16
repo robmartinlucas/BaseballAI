@@ -210,7 +210,8 @@
           </div>
         {% endif %}
 
-        <h3 class="roster-title">Full roster</h3>
+        <h3 class="roster-title">Roster pulse · recent Yahoo stats</h3>
+        <p class="fine-print">Recent 7-day category totals/rates, when available. Compare with games played before treating changes as a trend.</p>
         {% if data.roster %}
           <div class="roster-list">
             {% for p in data.roster %}
@@ -218,6 +219,13 @@
                 <span>
                   <strong>{{ p.name }}</strong>
                   <small>{{ p.nba_team }} · {{ p.positions }}</small>
+                  {% if p.recent_highlights %}
+                    <span class="recent-stats">
+                      {% for cat in p.recent_highlights %}
+                        <span><b>{{ cat.name }}</b> {{ cat.value }}</span>
+                      {% endfor %}
+                    </span>
+                  {% endif %}
                 </span>
                 <span class="roster-metadata">
                   {% if p.injury_status %}<span class="badge {{ 'waivers' if p.risk != 'none' else '' }}">{{ p.injury_status }}</span>{% endif %}
