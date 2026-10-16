@@ -132,6 +132,10 @@ class FantasyDashboardClient(YahooFantasyClient):
         return {
             "categories": categories,
             "max_adds": child_text(settings, "max_adds"),
+            "weekly_add_limit": (
+                child_text(settings, "weekly_add_limit")
+                or child_text(settings, "max_adds_per_week")
+            ),
             "scoring_type": child_text(settings, "scoring_type"),
             "waiver_type": child_text(settings, "waiver_type"),
         }
