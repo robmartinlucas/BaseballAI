@@ -45,10 +45,28 @@ class YahooConfig:
                 "Missing required environment variables: " + ", ".join(missing)
             )
 
+        client_id = os.environ["YAHOO_CLIENT_ID"].strip()
+        client_secret = os.environ["YAHOO_CLIENT_SECRET"].strip()
+        redirect_uri = os.environ["YAHOO_REDIRECT_URI"].strip()
+
+        for name, value in (
+            ("YAHOO_CLIENT_ID", client_id),
+            ("YAHOO_CLIENT_SECRET", client_secret),
+            ("YAHOO_REDIRECT_URI", redirect_uri),
+        ):
+            if any(char in value for char in "[]()"):
+                raise YahooAuthError(
+                    f"{name} appears to contain Markdown/link formatting. "
+                    "Use the raw value only."
+                )
+
+        if not redirect_uri.startswith("https://"):
+            raise YahooAuthError("YAHOO_REDIRECT_URI must start with https://")
+
         return cls(
-            client_id=os.environ["YAHOO_CLIENT_ID"],
-            client_secret=os.environ["YAHOO_CLIENT_SECRET"],
-            redirect_uri=os.environ["YAHOO_REDIRECT_URI"],
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
         )
 
 
