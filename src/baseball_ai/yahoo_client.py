@@ -11,7 +11,7 @@ import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Union
 from urllib.parse import quote, urlencode
 import xml.etree.ElementTree as ET
 
@@ -58,7 +58,7 @@ class TokenStore:
     The default path is under instance/, which is ignored by git.
     """
 
-    def __init__(self, path: str | Path) -> None:
+    def __init__(self, path: Union[str, Path]) -> None:
         self.path = Path(path)
 
     def load(self) -> dict[str, Any]:
@@ -172,7 +172,7 @@ def _local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
-def _first_descendant(element: ET.Element, name: str) -> ET.Element | None:
+def _first_descendant(element: ET.Element, name: str) -> Optional[ET.Element]:
     for child in element.iter():
         if _local_name(child.tag) == name:
             return child
