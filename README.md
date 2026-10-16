@@ -44,7 +44,7 @@ pip install -e .
 In the Yahoo Developer app, add this exact Redirect URI:
 
 ```text
-https://localhost:5000/oauth/callback
+https://localhost:5050/oauth/callback
 ```
 
 The Redirect URI in Yahoo and `YAHOO_REDIRECT_URI` in your local `.env` file must match exactly.
@@ -60,7 +60,7 @@ Fill in:
 ```text
 YAHOO_CLIENT_ID=...
 YAHOO_CLIENT_SECRET=...
-YAHOO_REDIRECT_URI=https://localhost:5000/oauth/callback
+YAHOO_REDIRECT_URI=https://localhost:5050/oauth/callback
 FLASK_SECRET_KEY=...
 ```
 
@@ -81,7 +81,7 @@ baseball-ai
 Then open:
 
 ```text
-https://localhost:5000
+https://localhost:5050
 ```
 
 The development server uses a local self-signed HTTPS certificate, so your browser will display a certificate warning. Continue to the local site, click **Connect Yahoo**, approve access, and Yahoo will redirect back to the app.
