@@ -182,6 +182,21 @@ class FantasyDashboardClient(YahooFantasyClient):
         root = _parse_xml(self.get(resource))
         return player_nodes(root)
 
+    def player_recent_stats(self, league_key: str, keys: List[str]) -> Dict[str, Dict[str, str]]:
+        """Yahoo recent 7-day player totals. Best-effort; not a projection."""
+        if not keys:
+            return {}
+        result = {}
+        for offset in range(0, len(keys), 25):
+            sub_keys = keys[offset:offset + 25]
+            resource = "league/{}/players;player_keys={}/stats;type=lastweek".format(
+                quote(league_key, safe=""), ",".join(quote(k, safe=".") for k in sub_keys)
+            )
+            root = _parse_xml(self.get(resource))
+            for player in player_nodes(root):
+                result[player["player_key"]] = player["stats"]
+        return result
+
     def player_season_stats(self, league_key: str, keys: List[str]) -> Dict[str, Dict[str, str]]:
         if not keys:
             return {}
