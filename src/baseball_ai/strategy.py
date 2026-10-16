@@ -332,6 +332,20 @@ class DashboardService:
         roster = optional("My roster", lambda: self.yahoo.roster(mine["team_key"]), []) if mine else []
         decorate_schedule(roster, schedule)
 
+        roster_keys = [p["player_key"] for p in roster if p.get("player_key")]
+        recent = optional(
+            "Recent seven-day player stats",
+            lambda: self.yahoo.player_recent_stats(league_key, roster_keys),
+            {},
+        ) if roster_keys else {}
+        for player in roster:
+            player["recent_stats"] = recent.get(player["player_key"], {})
+            player["recent_highlights"] = [
+                {"name": c["name"], "value": player["recent_stats"][c["id"]]}
+                for c in settings.get("categories", [])
+                if c["id"] in player["recent_stats"]
+            ][:5]
+
         available = []
         scanned = 0
         for offset in range(0, scan, 25):
