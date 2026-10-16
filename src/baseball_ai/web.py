@@ -186,7 +186,7 @@ def main() -> None:
     app = create_app()
 
     host = os.getenv("WEB_HOST", "127.0.0.1")
-    port = int(os.getenv("WEB_PORT", "5000"))
+    port = int(os.getenv("WEB_PORT", "5050"))
     use_https = os.getenv("WEB_HTTPS", "1").lower() not in {"0", "false", "no"}
 
     ssl_context = "adhoc" if use_https else None
