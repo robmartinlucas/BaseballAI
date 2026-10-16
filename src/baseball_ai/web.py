@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from requests import HTTPError
 
+from .fantasy_data import FantasyDashboardClient
+from .strategy import DashboardService
+
 from .yahoo_client import (
     TokenManager,
     TokenStore,
@@ -30,11 +33,13 @@ def create_app() -> Flask:
     token_store = TokenStore(os.getenv("YAHOO_TOKEN_FILE", "instance/yahoo_tokens.json"))
     oauth = YahooOAuth(config)
     tokens = TokenManager(oauth, token_store)
-    yahoo = YahooFantasyClient(tokens)
+    yahoo = FantasyDashboardClient(tokens)
+    dashboard_service = DashboardService(yahoo)
 
     app.extensions["yahoo_oauth"] = oauth
     app.extensions["yahoo_tokens"] = tokens
     app.extensions["yahoo_client"] = yahoo
+    app.extensions["dashboard_service"] = dashboard_service
 
     @app.get("/")
     def index():
@@ -92,13 +97,65 @@ def create_app() -> Flask:
         except Exception as exc:
             return render_template("error.html", message=_friendly_error(exc)), 502
 
+        dashboard_service._cache.clear()
         return redirect(url_for("index"))
 
     @app.post("/logout")
     def logout():
         token_store.clear()
+        dashboard_service._cache.clear()
         session.clear()
         return redirect(url_for("index"))
+
+    @app.get("/league/<league_key>/dashboard")
+    def league_dashboard(league_key: str):
+        if not tokens.connected():
+            return redirect(url_for("index"))
+        scan = 200 if request.args.get("scan", type=int) == 200 else 100
+        trades = request.args.get("trades", "0") == "1"
+        refresh = request.args.get("refresh") == "1"
+
+        moves_key = "moves_used_" + league_key
+        submitted_moves = request.args.get("moves_used", type=int)
+        if submitted_moves is not None and 0 <= submitted_moves <= 100:
+            session[moves_key] = submitted_moves
+        moves_used = session.get(moves_key)
+
+        try:
+            data = dashboard_service.get(
+                league_key, scan=scan, trades=trades, refresh=refresh
+            )
+        except Exception as exc:
+            return render_template(
+                "error.html",
+                message=_friendly_error(exc),
+                connected=True,
+            ), 502
+
+        max_adds = data["scoring"].get("max_adds")
+        try:
+            weekly_limit = int(max_adds)
+            if weekly_limit <= 0:
+                weekly_limit = None
+        except (TypeError, ValueError):
+            weekly_limit = None
+
+        remaining_moves = (
+            max(0, weekly_limit - moves_used)
+            if weekly_limit is not None and isinstance(moves_used, int)
+            else None
+        )
+
+        return render_template(
+            "dashboard.html",
+            connected=True,
+            data=data,
+            scan=scan,
+            trades=trades,
+            moves_used=moves_used,
+            weekly_limit=weekly_limit,
+            remaining_moves=remaining_moves,
+        )
 
     @app.get("/league/<league_key>/players")
     def league_players(league_key: str):
