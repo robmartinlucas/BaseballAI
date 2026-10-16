@@ -31,12 +31,13 @@
         <h2>Your current leagues</h2>
         <div class="league-list">
           {% for league in leagues %}
-            <a class="league" href="{{ url_for('league_players', league_key=league.league_key) }}">
+            <a class="league" href="{{ url_for('league_dashboard', league_key=league.league_key) }}">
               <strong>{{ league.name }}</strong>
               <span>{{ league.league_key }}</span>
               {% if league.draft_status %}
                 <span>Draft: {{ league.draft_status }}</span>
               {% endif %}
+              <span class="league-open">Open command center →</span>
             </a>
           {% endfor %}
         </div>
@@ -47,11 +48,11 @@
   {% endif %}
 
   <section class="card">
-    <h2>How player availability is read</h2>
+    <h2>Built for head-to-head category decisions</h2>
     <p>
-      This app does not use Yahoo's <code>status=A</code> or <code>status=FA</code>
-      filters. Instead it requests each player's Yahoo <code>ownership</code> resource
-      and labels the player as rostered, free agent, waivers, or unknown.
+      Your league dashboard analyzes the current matchup, short-term add/drop opportunities,
+      injury watchlists, and trade candidates on rival rosters. It reads Yahoo ownership directly
+      rather than relying on the availability filters that hung in previous tests.
     </p>
   </section>
 {% endblock %}
