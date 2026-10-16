@@ -109,7 +109,8 @@ def matchup_categories(categories: List[Dict[str, str]],
             "mine": own.get("stats", {}).get(sid, "—"),
             "theirs": other.get("stats", {}).get(sid, "—"),
             "state": state, "close": close,
-            "priority": (3 if state == "losing" and close else
+            "priority": (0 if available and mine == 0 and theirs == 0 else
+                         3 if state == "losing" and close else
                          2 if state == "tied" else
                          1 if state == "losing" else 0),
         })
@@ -276,9 +277,24 @@ def trade_candidates(players: List[Dict[str, Any]],
         )
     if categories and any(p.get("stats") for p in players):
         players.sort(key=lambda p: (-p["rank_score"], p["name"]))
-    else:
-        players.sort(key=lambda p: (p["owner_team_name"], p["name"]))
-    return players[:12]
+        return players[:12]
+
+    # Without relevant production data, do not present arbitrary alphabetic
+    # players from just one owner as a ranked trade recommendation. Show a
+    # cross-league sample, explicitly without a computed category fit.
+    by_owner: Dict[str, List[Dict[str, Any]]] = {}
+    for p in sorted(players, key=lambda x: x["name"]):
+        by_owner.setdefault(p["owner_team_name"], []).append(p)
+    sample = []
+    while by_owner and len(sample) < 12:
+        for owner in list(sorted(by_owner)):
+            if not by_owner[owner]:
+                del by_owner[owner]
+                continue
+            sample.append(by_owner[owner].pop(0))
+            if len(sample) >= 12:
+                break
+    return sample
 
 
 class DashboardService:
