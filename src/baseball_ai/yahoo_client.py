@@ -98,11 +98,13 @@ class YahooOAuth:
     def exchange_code(self, code: str) -> dict[str, Any]:
         response = requests.post(
             TOKEN_URL,
-            auth=(self.config.client_id, self.config.client_secret),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
             data={
-                "grant_type": "authorization_code",
+                "client_id": self.config.client_id,
+                "client_secret": self.config.client_secret,
                 "redirect_uri": self.config.redirect_uri,
                 "code": code,
+                "grant_type": "authorization_code",
             },
             timeout=30,
         )
@@ -113,11 +115,13 @@ class YahooOAuth:
     def refresh(self, refresh_token: str) -> dict[str, Any]:
         response = requests.post(
             TOKEN_URL,
-            auth=(self.config.client_id, self.config.client_secret),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
             data={
-                "grant_type": "refresh_token",
+                "client_id": self.config.client_id,
+                "client_secret": self.config.client_secret,
                 "redirect_uri": self.config.redirect_uri,
                 "refresh_token": refresh_token,
+                "grant_type": "refresh_token",
             },
             timeout=30,
         )
