@@ -19,6 +19,69 @@ A small personal, non-commercial Yahoo Fantasy Sports web app. The current UI is
 
 The app intentionally avoids Yahoo's `status=A` and `status=FA` player filters because those filters have hung during current API testing. It retrieves player ownership directly instead.
 
+## Matchup command center
+
+Choose a league from the home page to open its dashboard. The app is intended to
+support **winning the current head-to-head category matchup**, without implying
+that a short-term gain guarantees a win.
+
+- **Category battle:** Your current Yahoo H2H category values, opponent scores,
+  and close/tied categories that might be worth targeting. These are *actual
+  scores*, not projections.
+- **Weekly game plan:** A manual tracker for how many adds you have used this
+  week. The app reads the weekly add limit from Yahoo settings when supplied;
+  your remaining adds are an estimate based on your manual entry.
+- **Add candidates:** Yahoo-confirmed free agents and waiver players sampled
+  from the first 100 player records, expandable to 200. Uses observed
+  season-category strengths and upcoming NBA games. Does not use Yahoo's
+  `status=A/FA` filters because they hung during testing.
+- **Roster pulse:** Your team, injury alerts, upcoming games, and available
+  recent seven-day category results. Season or recent stats may be empty early
+  in the season. The app does not equate raw weekly totals to per-game trends.
+- **Drop watchlist:** Players with short-term injury/playing-window concerns,
+  clearly marked **review**, not an instruction to cut them.
+- **Trade radar:** An on-demand scan of other managers' current rosters,
+  showing potential targets and the owner to approach. The category-fit
+  indicator uses available Yahoo season stats; it is not a fair-value
+  calculation or an actual trade offer.
+
+Upcoming NBA contests use ESPN's unofficial public schedule feed when it
+responds. It is separate from Yahoo and can fail or change. Game counts are
+used to rank matchup streamers **only** when Yahoo supplies a verified matchup
+date window. Always check Yahoo's current lineup, acquisition limit, free
+agent/waiver state, and player game eligibility before making changes.
+
+Results are cached locally for five minutes. Use **Refresh Yahoo data**
+to force another fetch. Large player scans and the trade radar can take longer
+because they request several Yahoo resources.
+
+### Update an existing connected installation
+
+If you already have the app working on `https://127.0.0.1:5000`,
+**do not change the Yahoo redirect URI or your existing `.env`**:
+
+```bash
+# Stop the current server with Control-C first.
+cd ~/Development/BaseballAI
+git pull --ff-only
+source .venv/bin/activate
+python -m pip install -e .
+baseball-ai
+```
+
+Then visit `https://127.0.0.1:5000` and click your basketball league.
+Your existing locally saved Yahoo tokens stay in `instance/`.
+
+### Offline checks
+
+These tests require no Yahoo credentials or ESPN connection:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The repository also contains a GitHub Actions workflow for Python 3.9 and 3.11.
+
 ## Read-only by design
 
 Yahoo currently provisioned this application for read access. The code does **not** submit add/drop transactions, waiver claims, or lineup changes.
