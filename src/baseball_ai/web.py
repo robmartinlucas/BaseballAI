@@ -121,6 +121,11 @@ def create_app() -> Flask:
             session[moves_key] = submitted_moves
         moves_used = session.get(moves_key)
 
+        limit_key = "weekly_limit_" + league_key
+        submitted_limit = request.args.get("weekly_limit", type=int)
+        if submitted_limit is not None and 0 <= submitted_limit <= 100:
+            session[limit_key] = submitted_limit
+
         try:
             data = dashboard_service.get(
                 league_key, scan=scan, trades=trades, refresh=refresh
@@ -132,13 +137,15 @@ def create_app() -> Flask:
                 connected=True,
             ), 502
 
-        max_adds = data["scoring"].get("max_adds")
-        try:
-            weekly_limit = int(max_adds)
-            if weekly_limit <= 0:
+        weekly_limit = session.get(limit_key)
+        if weekly_limit is None:
+            limit_from_yahoo = data["scoring"].get("weekly_add_limit")
+            try:
+                weekly_limit = int(limit_from_yahoo)
+                if weekly_limit <= 0:
+                    weekly_limit = None
+            except (TypeError, ValueError):
                 weekly_limit = None
-        except (TypeError, ValueError):
-            weekly_limit = None
 
         remaining_moves = (
             max(0, weekly_limit - moves_used)
