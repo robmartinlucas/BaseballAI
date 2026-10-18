@@ -3,8 +3,10 @@
 import unittest
 import xml.etree.ElementTree as ET
 from datetime import date
+from types import SimpleNamespace
+from unittest.mock import Mock
 
-from baseball_ai.fantasy_data import parse_player, parse_team, parse_stats
+from baseball_ai.fantasy_data import FantasyDashboardClient, parse_player, parse_team, parse_stats
 from baseball_ai.strategy import (
     bucket,
     category_signal,
@@ -39,6 +41,21 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(player["stats"], {"12": "102"})
         self.assertEqual(bucket(player["ownership_type"]), "free_agent")
         self.assertEqual(risk(player), "questionable")
+
+    def test_ranked_scan_uses_yahoo_overall_rank_sort(self):
+        xml = b"""<fantasy_content><league><players>
+            <player><player_key>478.p.5</player_key>
+            <name><full>Example</full></name>
+            <ownership><ownership_type>freeagents</ownership_type></ownership>
+            </player>
+        </players></league></fantasy_content>"""
+        client = object.__new__(FantasyDashboardClient)
+        client.get = Mock(return_value=SimpleNamespace(content=xml))
+        result = client.league_player_page("478.l.123", 25, 25, ranked=True)
+        url = client.get.call_args[0][0]
+        self.assertIn(";sort=OR;start=25;count=25/ownership", url)
+        self.assertEqual(result[0]["yahoo_sort_position"], 26)
+        self.assertEqual(result[0]["ownership_type"], "freeagents")
 
     def test_team_scores(self):
         node = ET.fromstring("""
@@ -87,6 +104,17 @@ class DecisionTests(unittest.TestCase):
         ranked = score_free_agents(candidates, [], {"available": True})
         self.assertEqual(ranked[0]["name"], "A")
         self.assertTrue("upcoming NBA game" in ranked[0]["reason"])
+
+    def test_yahoo_overall_rank_beats_one_extra_game(self):
+        candidates = [
+            {"name": "Higher ranked", "stats": {}, "risk": "none", "games_remaining": 3,
+             "yahoo_sort_position": 170},
+            {"name": "Lower ranked", "stats": {}, "risk": "none", "games_remaining": 4,
+             "yahoo_sort_position": 280},
+        ]
+        ranked = score_free_agents(candidates, [], {"available": True, "rankable": True})
+        self.assertEqual(ranked[0]["name"], "Higher ranked")
+        self.assertIn("Yahoo overall-rank sort position", ranked[0]["reason"])
 
     def test_risk_is_watchlist_not_drop_automation(self):
         roster = [
