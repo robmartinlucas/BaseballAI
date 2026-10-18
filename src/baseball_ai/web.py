@@ -111,7 +111,7 @@ def create_app() -> Flask:
     def league_dashboard(league_key: str):
         if not tokens.connected():
             return redirect(url_for("index"))
-        scan = 200 if request.args.get("scan", type=int) == 200 else 100
+        scan = 500 if request.args.get("scan", type=int) == 500 else 300
         trades = request.args.get("trades", "0") == "1"
         refresh = request.args.get("refresh") == "1"
 
