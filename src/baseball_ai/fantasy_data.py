@@ -179,12 +179,26 @@ class FantasyDashboardClient(YahooFantasyClient):
                 pass
         return players
 
-    def league_player_page(self, league_key: str, start: int, count: int = 25) -> List[Dict[str, Any]]:
-        resource = "league/{}/players;start={};count={}/ownership".format(
-            quote(league_key, safe=""), max(0, start), min(25, max(1, count))
+    def league_player_page(
+        self, league_key: str, start: int, count: int = 25, *, ranked: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Read ownership, optionally ordering Yahoo's league collection by overall rank.
+
+        Does not use ;status=A or ;status=FA, which have stalled in this user's
+        current league. The ranked page is sorted server-side using Yahoo's
+        documented sort=OR filter, not a locally invented ranking.
+        """
+        start = max(0, start)
+        filters = ";sort=OR" if ranked else ""
+        resource = "league/{}/players{};start={};count={}/ownership".format(
+            quote(league_key, safe=""), filters, start, min(25, max(1, count))
         )
         root = _parse_xml(self.get(resource))
-        return player_nodes(root)
+        players = player_nodes(root)
+        if ranked:
+            for i, player in enumerate(players):
+                player["yahoo_sort_position"] = start + i + 1
+        return players
 
     def player_recent_stats(self, league_key: str, keys: List[str]) -> Dict[str, Dict[str, str]]:
         """Yahoo recent 7-day player totals. Best-effort; not a projection."""
