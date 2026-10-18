@@ -224,10 +224,18 @@ def score_free_agents(players: List[Dict[str, Any]],
         p["signal_score"] = signal["score"]
         # Upcoming games favor usable streamers, but not a fantasy projection.
         games = p.get("games_remaining")
-        game_score = float(games or 0) * 1.3 if schedule.get("rankable") else 0
-        injury_penalty = 4 if p["risk"] == "out" else 1 if p["risk"] == "questionable" else 0
-        p["rank_score"] = round(game_score + signal["score"] - injury_penalty, 2)
+        game_score = float(games or 0) * 1.2 if schedule.get("rankable") else 0
+        # The Yahoo overall-rank sort is a strength proxy before Week 1;
+        # show its *sort position*, not a misleading exact league ranking.
+        order = p.get("yahoo_sort_position")
+        quality_score = max(0, 700 - order) / 20 if order else 0
+        injury_penalty = 25 if p["risk"] == "out" else 4 if p["risk"] == "questionable" else 0
+        p["rank_score"] = round(
+            quality_score + game_score + signal["score"] - injury_penalty, 2
+        )
         reason = []
+        if order:
+            reason.append("Yahoo overall-rank sort position #{}".format(order))
         if games is not None:
             reason.append("{} upcoming NBA game{}{}".format(
                 games, "" if games == 1 else "s",
@@ -269,15 +277,33 @@ def trade_candidates(players: List[Dict[str, Any]],
         signal = category_signal(p, categories, players)
         p["helps_categories"] = signal["categories"]
         p["signal_score"] = signal["score"]
-        p["rank_score"] = signal["score"] - (3 if p["risk"] == "out" else 0)
+        order = p.get("yahoo_sort_position")
+        p["rank_score"] = (signal["score"] +
+                           (max(0, 700 - order) / 20 if order else 0) -
+                           (25 if p["risk"] == "out" else 0))
         p["reason"] = (
             "Season-stat fit: " + ", ".join(signal["categories"])
             if signal["categories"] else
-            "League roster confirmed; category fit requires more season stats"
+            ("Yahoo overall-rank sort position #{}; trade value not assessed".format(order)
+             if order else "Owned player; category fit and trade value not yet assessed")
         )
-    if categories and any(p.get("stats") for p in players):
+    if any(p.get("yahoo_sort_position") for p in players) or (
+        categories and any(p.get("stats") for p in players)
+    ):
         players.sort(key=lambda p: (-p["rank_score"], p["name"]))
-        return players[:12]
+        # Keep the radar multi-manager, rather than listing an entire star-
+        # studded lineup from just one manager.
+        per_owner = {}
+        top = []
+        for p in players:
+            owner = p.get("owner_team_key") or p.get("owner_team_name")
+            if per_owner.get(owner, 0) >= 3:
+                continue
+            per_owner[owner] = per_owner.get(owner, 0) + 1
+            top.append(p)
+            if len(top) >= 12:
+                break
+        return top
 
     # Without relevant production data, do not present arbitrary alphabetic
     # players from just one owner as a ranked trade recommendation. Show a
@@ -306,7 +332,7 @@ class DashboardService:
 
     def get(self, league_key: str, *, scan: int = 100,
             trades: bool = False, refresh: bool = False) -> Dict[str, Any]:
-        scan = 200 if scan >= 200 else 100
+        scan = 500 if scan >= 500 else 300
         cache_key = "{}:{}:{}".format(league_key, scan, trades)
         cached = self._cache.get(cache_key)
         if not refresh and cached and time.time() - cached["timestamp"] < 300:
@@ -370,19 +396,56 @@ class DashboardService:
 
         available = []
         scanned = 0
+        rank_by_key: Dict[str, int] = {}
+        used_yahoo_rank_sort = True
+        # Yahoo has documented sort=OR for overall-rank sorting. Scanning only
+        # the first 100 unsorted names had returned alphabetic, weak pickup
+        # candidates. Scan more *ranked* players, then use ownership to decide
+        # who is actually available. Retain a safe unsorted fallback.
         for offset in range(0, scan, 25):
-            page = optional(
-                "Yahoo player page starting at {}".format(offset),
-                lambda pos=offset: self.yahoo.league_player_page(league_key, pos, 25),
-                [],
-            )
+            try:
+                page = self.yahoo.league_player_page(
+                    league_key, offset, 25, ranked=used_yahoo_rank_sort
+                )
+            except Exception as exc:
+                if used_yahoo_rank_sort:
+                    used_yahoo_rank_sort = False
+                    rank_by_key.clear()
+                    available.clear()
+                    scanned = 0
+                    notices.append(
+                        "Yahoo overall-rank sorting unavailable; using unranked player pages: {}".format(str(exc)[:150])
+                    )
+                    break
+                notices.append("Yahoo player scan interrupted: {}".format(str(exc)[:150]))
+                break
+
             if not page:
                 break
             scanned += len(page)
-            available.extend(p for p in page if bucket(p.get("ownership_type", "")) in
-                             {"free_agent", "waivers"})
+            for p in page:
+                if used_yahoo_rank_sort and p.get("yahoo_sort_position"):
+                    rank_by_key[p["player_key"]] = p["yahoo_sort_position"]
+                if bucket(p.get("ownership_type", "")) in {"free_agent", "waivers"}:
+                    available.append(p)
             if len(page) < 25:
                 break
+
+        if not used_yahoo_rank_sort:
+            for offset in range(0, scan, 25):
+                page = optional(
+                    "Yahoo unranked player page starting at {}".format(offset),
+                    lambda pos=offset: self.yahoo.league_player_page(league_key, pos, 25),
+                    [],
+                )
+                if not page:
+                    break
+                scanned += len(page)
+                available.extend(
+                    p for p in page if bucket(p.get("ownership_type", "")) in {"free_agent", "waivers"}
+                )
+                if len(page) < 25:
+                    break
 
         stats_keys = [p["player_key"] for p in available if p["player_key"]]
         if stats_keys:
@@ -408,6 +471,8 @@ class DashboardService:
                 for p in other:
                     p["owner_team_name"] = team["name"]
                     p["owner_team_key"] = team["team_key"]
+                    if p["player_key"] in rank_by_key:
+                        p["yahoo_sort_position"] = rank_by_key[p["player_key"]]
                 other_rosters.extend(other)
             decorate_schedule(other_rosters, schedule)
         target_board = trade_candidates(other_rosters, category_rows)
@@ -422,6 +487,7 @@ class DashboardService:
             "waivers_found": sum(bucket(p["ownership_type"]) == "waivers"
                                  for p in available),
             "scanned": scanned, "requested_scan": scan,
+            "ranked_scan": used_yahoo_rank_sort,
             "drop_watchlist": drop_watchlist(roster, schedule),
             "trades_loaded": trades, "trade_targets": target_board,
             "schedule": schedule, "window": window, "notices": notices,
