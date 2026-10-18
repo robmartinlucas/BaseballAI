@@ -31,19 +31,24 @@ that a short-term gain guarantees a win.
 - **Weekly game plan:** A manual tracker for how many adds you have used this
   week. The app reads the weekly add limit from Yahoo settings when supplied;
   your remaining adds are an estimate based on your manual entry.
-- **Add candidates:** Yahoo-confirmed free agents and waiver players sampled
-  from the first 100 player records, expandable to 200. Uses observed
-  season-category strengths and upcoming NBA games. Does not use Yahoo's
-  `status=A/FA` filters because they hung during testing.
+- **Add candidates:** Yahoo-confirmed free agents and waiver players found by
+  checking ownership across the first **300 Yahoo overall-rank-sorted players**,
+  expandable to **500**. Prioritizes Yahoo ranking context, injury risk,
+  upcoming games, and available category stats; one extra game is not assumed
+  to make an otherwise weaker player a better add. If Yahoo's documented
+  `sort=OR` filter fails, falls back to the unranked collection and labels it.
+  Does not use Yahoo's `status=A/FA` filters because they hung during testing.
 - **Roster pulse:** Your team, injury alerts, upcoming games, and available
   recent seven-day category results. Season or recent stats may be empty early
   in the season. The app does not equate raw weekly totals to per-game trends.
 - **Drop watchlist:** Players with short-term injury/playing-window concerns,
   clearly marked **review**, not an instruction to cut them.
 - **Trade radar:** An on-demand scan of other managers' current rosters,
-  showing potential targets and the owner to approach. The category-fit
-  indicator uses available Yahoo season stats; it is not a fair-value
-  calculation or an actual trade offer.
+  showing potential targets and the owner to approach. Before Week 1, uses
+  Yahoo's overall-ranking order for players in the ranked player scan rather
+  than showing arbitrary alphabetic names. Category fit uses available Yahoo
+  season stats; this is still **not** a fair-value calculation, trade package,
+  or actual trade offer.
 
 Upcoming NBA contests use ESPN's unofficial public schedule feed when it
 responds. It is separate from Yahoo and can fail or change. Game counts are
@@ -52,8 +57,11 @@ date window. Always check Yahoo's current lineup, acquisition limit, free
 agent/waiver state, and player game eligibility before making changes.
 
 Results are cached locally for five minutes. Use **Refresh Yahoo data**
-to force another fetch. Large player scans and the trade radar can take longer
-because they request several Yahoo resources.
+to force another fetch. A ranked scan of 300 players involves roughly 12
+paginated Yahoo API requests plus stat and roster requests, so the first
+refresh may take noticeably longer. Expanded scans and the trade radar make
+additional requests. Players may appear with missing injury or season stats
+before the NBA season starts.
 
 ### Update an existing connected installation
 
